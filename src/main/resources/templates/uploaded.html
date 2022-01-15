@@ -1,0 +1,38 @@
+<html xmlns:th="https://www.thymeleaf.org">
+<body>
+
+	<div th:if="${message}">
+		<h2 th:text="${message}"/>
+	</div>
+
+
+
+	<div th:if="${not #lists.isEmpty(files)}">
+		<div>
+			<h2>Plik wynikowy:</h2>
+		</div>
+		<div>
+			<ul>
+				<li th:each="file : ${files}">
+					<a th:href="${file}" th:text="Pobierz" />
+				</li>
+			</ul>
+		</div>
+
+	</div>
+
+	<div th:unless="${not #lists.isEmpty(files)}">
+		Czekaj...
+		<script>
+			setTimeout(function(){
+			window.location.reload(1);
+			}, 5000);
+		</script>
+	</div>
+
+	<div>
+		<a href="/">Powrót</a>
+	</div>
+
+</body>
+</html>
