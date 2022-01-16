@@ -79,6 +79,35 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>prepare</id>
+                        <phase>package</phase>
+                        <configuration>
+                            <tasks>
+
+                                <property name="buildName" value="${project.build.finalName}.jar"/>
+
+                                <copy todir="${project.build.directory}/aws-build/" overwrite="false">
+                                    <fileset file="${project.build.directory}/${project.build.finalName}.jar"/>
+                                    <fileset dir="./aws" />
+                                </copy>
+
+                                <replace file="${project.build.directory}/aws-build/Procfile" token="@jarname@" value="${buildName}"/>
+
+                                <zip compress="false" destfile="${project.build.directory}/aws-build/app-to-deploy.jar" basedir="${project.build.directory}/aws-build"/>
+
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
