@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.SessionScope;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.PreDestroy;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Path;
@@ -109,6 +110,7 @@ public class EANAppender {
         FileOutputStream outputStream = new FileOutputStream(file);
         workbook.write(outputStream);
         workbook.close();
+        outputStream.close();
     }
 
     public void clearResultPath() {
@@ -157,5 +159,10 @@ public class EANAppender {
 
         Picture picture = drawing.createPicture(anchor, pictureId);
         picture.resize(SKALA_X_OBRAZKA, SKALA_Y_OBRAZKA);
+    }
+
+    @PreDestroy
+    public void close() {
+        clearResultPath();
     }
 }
