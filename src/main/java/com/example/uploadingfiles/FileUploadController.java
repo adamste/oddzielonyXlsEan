@@ -1,6 +1,6 @@
 package com.example.uploadingfiles;
 
-import com.example.uploadingfiles.storage.StorageService;
+import com.example.uploadingfiles.storage.EANAppender;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,28 +17,20 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Controller
 public class FileUploadController {
 
-	private final StorageService storageService;
 	private final Logger logger = LogManager.getRootLogger();
 
 	@Autowired
-	public FileUploadController(StorageService storageService) {
-		this.storageService = storageService;
-	}
+	private EANAppender eanAppender;
 
 	@GetMapping("/")
-	public String listUploadedFiles() throws Exception {
+	public String listUploadedFiles() {
 
 		logger.info("Zalogowany user dostanie formularz do uploadu");
-
-		storageService.deleteAll();
-		storageService.init();
 
 		return "uploadForm";
 	}
@@ -47,45 +39,36 @@ public class FileUploadController {
 	@ResponseBody
 	public ResponseEntity<Resource> serveFile(@PathVariable String filename) {
 
-		Resource file = storageService.loadAsResource(filename);
+		Resource file = eanAppender.loadAsResource(filename);
 		return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
-				"attachment; filename=\"" + file.getFilename() + "\"").body(file);
+				"attachment; filename=\"" + filename + "\"").body(file);
 	}
 
 	@PostMapping("/")
 	public RedirectView handleFileUpload(@RequestParam("file") MultipartFile file, Model model) throws Exception {
 
+		eanAppender.clearResultPath();
+
 		logger.info("Proces wrzucania pliku o nazwie: " + file.getOriginalFilename() + " i rozmiarze" + file.getSize());
 
-		ExecutorService executorService = Executors.newSingleThreadExecutor();
-
 		File temp = new File(String.valueOf(Files.createTempFile("hello", ".xls")));
+		temp.deleteOnExit();
 		file.transferTo(temp);
 
-		executorService.execute(() -> {
-			storageService.deleteAll();
-			storageService.init();
-			storageService.processAndStore(temp, file.getOriginalFilename());
-		});
-
-//		model.addAttribute("message", "message to display");
-
-		model.addAttribute("files", storageService.loadAll().map(
-				path -> MvcUriComponentsBuilder.fromMethodName(FileUploadController.class,
-						"serveFile", path.getFileName().toString()).build().toUri().toString())
-				.collect(Collectors.toList()));
+		eanAppender.asyncProcess(file, temp);
 
 		return new RedirectView("result");
 	}
 
 	@GetMapping("/result")
-	public String listUploasdedFiles(Model model) throws Exception {
+	public String listUploadedFiles(Model model) {
 
-		model.addAttribute("files", storageService.loadAll().map(
-				path -> MvcUriComponentsBuilder.fromMethodName(FileUploadController.class,
-						"serveFile", path.getFileName().toString()).build().toUri().toString())
-				.collect(Collectors.toList()));
-
+		if (eanAppender.getResult() != null) {
+			model.addAttribute("files", eanAppender.loadAll().map(
+					path -> MvcUriComponentsBuilder.fromMethodName(FileUploadController.class,
+							"serveFile", path.getFileName().toString()).build().toUri().toString())
+					.collect(Collectors.toList()));
+		}
 		return "uploaded";
 	}
 
