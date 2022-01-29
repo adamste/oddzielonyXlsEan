@@ -26,8 +26,8 @@ import java.util.stream.Stream;
 @SessionScope
 public class EANAppender {
     private final Logger logger = LogManager.getRootLogger();
-    private static final short WYSOKOSC_WIERSZA = (short) 1300;
-    private static final int SZEROKOSC_EAN = 7000;
+    private static final short WYSOKOSC_WIERSZA = (short) 1900;
+    private static final int SZEROKOSC_EAN = 16000;
     private static final double SKALA_X_OBRAZKA = 0.85;
     private static final double SKALA_Y_OBRAZKA = 0.85;
     private static final int ODEPCHNIECIE_Y_OBRAZKA = 42;
