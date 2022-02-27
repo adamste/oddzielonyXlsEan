@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellUtil;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.scheduling.annotation.Async;
@@ -65,6 +66,7 @@ public class EANAppender {
 
         sheet.rowIterator().forEachRemaining(
                 row -> {
+                    makeFreeColumnForEANs(row);
 
                     try {
                         if (row.getCell(0) == null) {
@@ -72,7 +74,6 @@ public class EANAppender {
                         }
 
                         row.setHeight(WYSOKOSC_WIERSZA);
-                        makeFreeColumnForEANs(row);
 
                         String ean = String.format("%.0f", row.getCell(0).getNumericCellValue());
 
@@ -140,7 +141,17 @@ public class EANAppender {
 
     private static void makeFreeColumnForEANs(Row row) {
 
-        row.shiftCellsRight(1,row.getLastCellNum()-1,1);
+        for (int i = row.getLastCellNum(); i > 1; i--)
+        {
+            Cell previousCell = row.getCell(i - 1);
+            Cell cell = row.createCell(i);
+            if (previousCell != null && cell != null)
+            {
+                CellUtil.copyCell(previousCell, cell, new CellCopyPolicy.Builder().build(), null);
+            }
+        }
+        row.createCell(1);
+        // row.getSheet().autoSizeColumn(row.getLastCellNum()-1);
     }
 
     private static void addImage(Workbook workbook, Sheet sheet, Row row, byte[] eanImage) {
